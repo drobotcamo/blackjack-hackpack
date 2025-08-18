@@ -30,6 +30,16 @@ class Rank:
         self.priority = priority
         self.score_value = score_value
 
+    def __eq__(self, other):
+        if isinstance(other, Rank):
+            return self.name == other.name and self.priority == other.priority and self.score_value == other.score_value
+        return False
+
+    def __str__(self):
+        return f"{self.name}"
+
+    def __repr__(self):
+        return f"Rank(name='{self.name}', priority={self.priority}, score_value={self.score_value})"
 
 # Enumerated Type that represents all the possible ranks that a card can be.
 class Ranks(Enum):
@@ -47,6 +57,7 @@ class Ranks(Enum):
     KING = Rank('K', 13, 10)
     ACE = Rank('A', 14, 11)
 
+    LOW_ACE = Rank('a', 14, 1)
 
 class Card:
     static_id = 0
@@ -54,10 +65,24 @@ class Card:
     def __init__(self, rank: Rank, suit: Suit):
         self.rank = rank
         self.suit = suit
-        self.score_value  = rank.score_value
         self.id = Card.static_id
         self.flipped = False
         Card.static_id += 1
+
+    @classmethod
+    def from_string(cls, card_str: str):
+        # Example input: "8♣", "J♠", "A♥"
+        rank_map = {r.value.name: r.value for r in Ranks}
+        suit_map = {s.value.name: s.value for s in Suits}
+        if len(card_str) < 2:
+            raise ValueError("Invalid card string format")
+        rank_part = card_str[:-1]
+        suit_part = card_str[-1]
+        rank = rank_map.get(rank_part)
+        suit = suit_map.get(suit_part)
+        if not rank or not suit:
+            raise ValueError(f"Invalid card string: {card_str}")
+        return cls(rank, suit)
 
     def isFace(self) -> bool:
         if 10 < self.rank.priority < 14:
@@ -123,7 +148,8 @@ class Deck:
         self.base_cards: List[Card] = []
         for suit in Suits:
             for rank in Ranks:
-                self.base_cards.append(Card(rank.value, suit.value))
+                if rank != Ranks.LOW_ACE:
+                    self.base_cards.append(Card(rank.value, suit.value))
 
         self.active_cards = self.base_cards.copy()
 
@@ -240,7 +266,7 @@ class Hand:
         mult = scoringHandType.mult
 
         for card in scoringHand:
-            chips += card.scoringValue
+            chips += card.rank.score_value
 
         value = chips * mult
         # print(f"Hand scored: {scoringHandType}, worth {value} chips")
