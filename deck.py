@@ -62,11 +62,12 @@ class Ranks(Enum):
 class Card:
     static_id = 0
 
-    def __init__(self, rank: Rank, suit: Suit):
+    def __init__(self, rank: Rank, suit: Suit, handValue=0):
         self.rank = rank
         self.suit = suit
         self.id = Card.static_id
         self.flipped = False
+        self.handValue = handValue
         Card.static_id += 1
 
     @classmethod
@@ -127,8 +128,13 @@ class Card:
         H  = '─'  # horizontal
         V  = '│'  # vertical
 
-        value = self.rank.name if not self.flipped else "▓"
-        suit = self.suit.name if not self.flipped else "▓"
+        if self.handValue > 0:
+            valueString = f"{int(self.handValue):02d}" if self.handValue <= 21 else "XX"
+            value = valueString[0]
+            suit = valueString[1]
+        else:
+            value = self.rank.name if not self.flipped else "▓"
+            suit = self.suit.name if not self.flipped else "▓"
 
         lines = [
             [TL, H, H, TR],
@@ -151,6 +157,8 @@ class Deck:
                 if rank != Ranks.LOW_ACE:
                     self.base_cards.append(Card(rank.value, suit.value))
 
+
+
         self.active_cards = self.base_cards.copy()
 
 
@@ -160,10 +168,7 @@ class Deck:
     def remove(self, card_id: int):
         target_index = -1
         for index, card in enumerate(self.base_cards):
-            print(f"{card.id}     {card_id}")
             if card.id == card_id:
-                print(f"Found Bro! He is at {index}")
-                print(card)
                 target_index = index
                 break
         self.base_cards.pop(target_index)
